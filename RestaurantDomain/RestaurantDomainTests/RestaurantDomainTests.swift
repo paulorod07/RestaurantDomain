@@ -10,25 +10,40 @@ import XCTest
 
 final class RestaurantDomainTests: XCTestCase {
 
-    func test_initializer_remoteRestaurantLoader_and_validate_url() throws {
+    func test_initializer_remoteRestaurantLoader_and_validate_url() async throws {
         let url = try XCTUnwrap(URL(string: "https://google.com"))
         let networkClient = NetworkClientSpy()
         let sut = RemoteRestaurantLoader(url: url, networkClient: networkClient)
         
-        sut.load()
+        _ = await sut.load()
         
         XCTAssertEqual(networkClient.urls, [url])
     }
     
-    func test_load_twice() throws {
+    func test_load_twice() async throws {
         let url = try XCTUnwrap(URL(string: "https://google.com"))
         let networkClient = NetworkClientSpy()
         let sut = RemoteRestaurantLoader(url: url, networkClient: networkClient)
         
-        sut.load()
-        sut.load()
+        _ = await sut.load()
+        _ = await sut.load()
         
         XCTAssertEqual(networkClient.urls, [url, url])
+    }
+    
+    func test_load_and_returned_error_for_connectivity() async throws {
+        let url = try XCTUnwrap(URL(string: "https://google.com"))
+        let networkClient = NetworkClientSpy()
+        let sut = RemoteRestaurantLoader(url: url, networkClient: networkClient)
+        
+        let expectation = expectation(description: "aguardando retorno do método async")
+        
+        let error = await sut.load()
+        expectation.fulfill()
+        
+        wait(for: [expectation], timeout: 1)
+        
+        XCTAssertNotNil(error)
     }
 
 }
@@ -37,8 +52,9 @@ final class NetworkClientSpy: NetworkClientProtocol {
     
     private(set) var urls: [URL] = []
      
-    func request(from url: URL) {
+    func request(from url: URL) async -> Error {
         self.urls.append(url)
+        return NSError(domain: "any error", code: -1)
     }
     
 }

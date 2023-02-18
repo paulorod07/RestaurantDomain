@@ -8,7 +8,7 @@
 import Foundation
 
 protocol NetworkClientProtocol {
-    func request(from url: URL)
+    func request(from url: URL) async -> Error
 }
 
 final class RemoteRestaurantLoader {
@@ -21,8 +21,8 @@ final class RemoteRestaurantLoader {
         self.networkClient = networkClient
     }
     
-    func load() {
-        networkClient.request(from: url)
+    func load() async -> Error {
+        await networkClient.request(from: url)
     }
     
 }
