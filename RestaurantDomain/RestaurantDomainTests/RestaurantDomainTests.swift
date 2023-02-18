@@ -36,12 +36,7 @@ final class RestaurantDomainTests: XCTestCase {
         let networkClient = NetworkClientSpy()
         let sut = RemoteRestaurantLoader(url: url, networkClient: networkClient)
         
-        let expectation = expectation(description: "aguardando retorno do método async")
-        
         let error = await sut.load()
-        expectation.fulfill()
-        
-        wait(for: [expectation], timeout: 1)
         
         XCTAssertNotNil(error)
     }
