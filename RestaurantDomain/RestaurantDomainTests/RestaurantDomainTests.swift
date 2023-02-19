@@ -32,9 +32,9 @@ final class RestaurantDomainTests: XCTestCase {
         
         networkClient.result = .failure(NSError(domain: "any error", code: -1))
         
-        let returnedResult: RemoteRestaurantLoader.Error = await sut.load()
+        let returnedResult: RemoteRestaurantLoader.RemoteRestaurantResult = await sut.load()
         
-        XCTAssertEqual(returnedResult, .connectivity)
+        XCTAssertEqual(returnedResult, .failure(.connectivity))
     }
     
     func test_load_and_returned_error_for_invalidData() async throws {
@@ -48,9 +48,26 @@ final class RestaurantDomainTests: XCTestCase {
         
         networkClient.result = .success((Data(), response))
         
-        let returnedResult: RemoteRestaurantLoader.Error = await sut.load()
+        let returnedResult: RemoteRestaurantLoader.RemoteRestaurantResult = await sut.load()
         
-        XCTAssertEqual(returnedResult, .invalidData)
+        XCTAssertEqual(returnedResult, .failure(.invalidData))
+    }
+    
+    func test_load_and_returned_success_with_empty_list() async throws {
+        let (sut, networkClient, url) = try makeSUT()
+        
+        let response = try XCTUnwrap(HTTPURLResponse(
+            url: url,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        ))
+        
+        networkClient.result = .success((emptyData(), response))
+        
+        let returnedResult: RemoteRestaurantLoader.RemoteRestaurantResult = await sut.load()
+        
+        XCTAssertEqual(returnedResult, .success([]))
     }
     
     private func makeSUT() throws -> (sut: RemoteRestaurantLoader, networkClient: NetworkClientSpy, url: URL) {
@@ -59,6 +76,10 @@ final class RestaurantDomainTests: XCTestCase {
         let sut = RemoteRestaurantLoader(url: url, networkClient: networkClient)
         
         return (sut, networkClient, url)
+    }
+    
+    private func emptyData() -> Data {
+        Data("{ \"items\": [] }".utf8)
     }
 
 }
