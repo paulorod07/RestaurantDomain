@@ -7,8 +7,18 @@
 
 import Foundation
 
+struct RestaurantItem {
+    let id: UUID
+    let name: String
+    let location: String
+    let distance: Float
+    let ratings: Int
+    let parasols: Int
+}
+
 enum NetworkState {
-    case success
+    typealias NetworkState = Result<(Data, HTTPURLResponse), Error>
+    case success(Data, HTTPURLResponse)
     case error(Error)
 }
 
@@ -32,9 +42,9 @@ final class RemoteRestaurantLoader {
     }
     
     func load() async -> RemoteRestaurantLoader.Error {
-        let state = await networkClient.request(from: url)
+        let result = await networkClient.request(from: url)
         
-        switch state {
+        switch result {
             case .success:
                 return .invalidData
             case .error:
