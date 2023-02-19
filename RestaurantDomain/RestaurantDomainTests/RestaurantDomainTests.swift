@@ -70,6 +70,30 @@ final class RestaurantDomainTests: XCTestCase {
         XCTAssertEqual(returnedResult, .success([]))
     }
     
+    func test_load_and_returned_success_with_restaurant_item_list() async throws {
+        let (sut, networkClient, url) = try makeSUT()
+        
+        let response = try XCTUnwrap(HTTPURLResponse(
+            url: url,
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: nil
+        ))
+        
+        let (model1, json1) = makeItem()
+        let (model2, json2) = makeItem()
+        
+        let jsonItem = ["items": [json1, json2]]
+        
+        let data = try JSONSerialization.data(withJSONObject: jsonItem)
+        
+        networkClient.result = .success((data, response))
+        
+        let returnedResult: RemoteRestaurantLoader.RemoteRestaurantResult = await sut.load()
+        
+        XCTAssertEqual(returnedResult, .success([model1, model2]))
+    }
+    
     private func makeSUT() throws -> (sut: RemoteRestaurantLoader, networkClient: NetworkClientSpy, url: URL) {
         let url = try XCTUnwrap(URL(string: "https://google.com"))
         let networkClient = NetworkClientSpy()
@@ -80,6 +104,36 @@ final class RestaurantDomainTests: XCTestCase {
     
     private func emptyData() -> Data {
         Data("{ \"items\": [] }".utf8)
+    }
+    
+    func makeItem(
+        id: UUID = UUID(),
+        name: String = "name",
+        location: String = "location",
+        distance: Float = 5.5,
+        ratings: Int = 4,
+        parasols: Int = 10
+    ) -> (model: RestaurantItem, json: [String:Any]) {
+        
+        let model = RestaurantItem(
+            id: UUID(),
+            name: "name",
+            location: "location",
+            distance: 5.5,
+            ratings: 0,
+            parasols: 0
+        )
+        
+        let itemJson: [String:Any] = [
+            "id": model.id.uuidString,
+            "name": model.name,
+            "location": model.location,
+            "distance": model.distance,
+            "ratings": model.ratings,
+            "parasols": model.parasols
+        ]
+        
+        return (model, itemJson)
     }
 
 }
