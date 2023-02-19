@@ -94,6 +94,30 @@ final class RestaurantDomainTests: XCTestCase {
         XCTAssertEqual(returnedResult, .success([model1, model2]))
     }
     
+    func test_load_and_returned_error_for_invalid_status_code() async throws {
+        let (sut, networkClient, url) = try makeSUT()
+        
+        let response = try XCTUnwrap(HTTPURLResponse(
+            url: url,
+            statusCode: 201,
+            httpVersion: nil,
+            headerFields: nil
+        ))
+        
+        let (_, json1) = makeItem()
+        let (_, json2) = makeItem()
+        
+        let jsonItem = ["items": [json1, json2]]
+        
+        let data = try JSONSerialization.data(withJSONObject: jsonItem)
+        
+        networkClient.result = .success((data, response))
+        
+        let returnedResult: RemoteRestaurantLoader.RemoteRestaurantResult = await sut.load()
+        
+        XCTAssertEqual(returnedResult, .failure(.invalidData))
+    }
+    
     private func makeSUT() throws -> (sut: RemoteRestaurantLoader, networkClient: NetworkClientSpy, url: URL) {
         let url = try XCTUnwrap(URL(string: "https://google.com"))
         let networkClient = NetworkClientSpy()

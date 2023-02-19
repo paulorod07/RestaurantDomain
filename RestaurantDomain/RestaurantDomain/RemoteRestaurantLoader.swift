@@ -29,6 +29,7 @@ final class RemoteRestaurantLoader {
     
     let url: URL
     let networkClient: NetworkClientProtocol
+    private let okResponse: Int = 200
     
     enum Error: Swift.Error {
         case connectivity
@@ -45,10 +46,11 @@ final class RemoteRestaurantLoader {
         let result = await networkClient.request(from: url)
         
         switch result {
-            case let .success((data, _)):
+            case let .success((data, response)):
                 
                 guard
-                    let json = try? JSONDecoder().decode(RestaurantRoot.self, from: data)
+                    let json = try? JSONDecoder().decode(RestaurantRoot.self, from: data),
+                    response.statusCode == okResponse
                 else { return .failure(.invalidData) }
                 
                 return .success(json.items)
