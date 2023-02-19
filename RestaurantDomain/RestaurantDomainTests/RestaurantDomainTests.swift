@@ -30,7 +30,7 @@ final class RestaurantDomainTests: XCTestCase {
     func test_load_and_returned_error_for_connectivity() async throws {
         let (sut, networkClient, _) = try makeSUT()
         
-        networkClient.result = .error(NSError(domain: "any error", code: -1))
+        networkClient.result = .failure(NSError(domain: "any error", code: -1))
         
         let returnedResult: RemoteRestaurantLoader.Error = await sut.load()
         
@@ -46,7 +46,7 @@ final class RestaurantDomainTests: XCTestCase {
             headerFields: nil
         ))
         
-        networkClient.result = .success(Data(), response)
+        networkClient.result = .success((Data(), response))
         
         let returnedResult: RemoteRestaurantLoader.Error = await sut.load()
         
@@ -67,11 +67,11 @@ final class NetworkClientSpy: NetworkClientProtocol {
     
     private(set) var urls: [URL] = []
     
-    var result: NetworkState?
+    var result: NetworkResult?
      
-    func request(from url: URL) async -> NetworkState {
+    func request(from url: URL) async -> NetworkResult {
         self.urls.append(url)
-        return result ?? .error(NSError(domain: "any error", code: -1))
+        return result ?? .failure(NSError(domain: "any error", code: -1))
     }
     
 }

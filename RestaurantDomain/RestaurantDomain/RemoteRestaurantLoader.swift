@@ -16,14 +16,9 @@ struct RestaurantItem {
     let parasols: Int
 }
 
-enum NetworkState {
-    typealias NetworkState = Result<(Data, HTTPURLResponse), Error>
-    case success(Data, HTTPURLResponse)
-    case error(Error)
-}
-
 protocol NetworkClientProtocol {
-    func request(from url: URL) async -> NetworkState
+    typealias NetworkResult = Result<(Data, HTTPURLResponse), Error>
+    func request(from url: URL) async -> NetworkResult
 }
 
 final class RemoteRestaurantLoader {
@@ -47,7 +42,7 @@ final class RemoteRestaurantLoader {
         switch result {
             case .success:
                 return .invalidData
-            case .error:
+            case .failure:
                 return .connectivity
         }
     }
