@@ -1,5 +1,5 @@
 //
-//  RestaurantDomainTests.swift
+//  RemoteRestaurantLoader.swift
 //  RestaurantDomainTests
 //
 //  Created by Paulo Rodrigues on 18/02/23.
@@ -8,7 +8,7 @@
 import XCTest
 @testable import RestaurantDomain
 
-final class RestaurantDomainTests: XCTestCase {
+final class RemoteRestaurantLoaderTests: XCTestCase {
 
     func test_initializer_remoteRestaurantLoader_and_validate_url() async throws {
         let (sut, networkClient, url) = try makeSUT()
@@ -118,16 +118,56 @@ final class RestaurantDomainTests: XCTestCase {
         XCTAssertEqual(returnedResult, .failure(.invalidData))
     }
     
-    private func makeSUT() throws -> (sut: RemoteRestaurantLoader, networkClient: NetworkClientSpy, url: URL) {
+    func test_load_not_returned_after_sut_deallocated() async throws {
+        let url = try XCTUnwrap(URL(string: "https://google.com"))
+        let networkClient = NetworkClientSpy()
+        var sut: RemoteRestaurantLoader? = RemoteRestaurantLoader(url: url, networkClient: networkClient)
+        
+        
+        let response = try XCTUnwrap(HTTPURLResponse(
+            url: url,
+            statusCode: 201,
+            httpVersion: nil,
+            headerFields: nil
+        ))
+        
+        networkClient.result = .success((Data(), response))
+        
+        let returnedResult: RemoteRestaurantLoader.RemoteRestaurantResult? = await sut?.load()
+        
+        sut = nil
+        
+        XCTAssertNil(returnedResult)
+    }
+    
+    private func makeSUT(file: StaticString = #filePath, line: UInt = #line) throws -> (
+        sut: RemoteRestaurantLoader,
+        networkClient: NetworkClientSpy,
+        url: URL
+    ) {
         let url = try XCTUnwrap(URL(string: "https://google.com"))
         let networkClient = NetworkClientSpy()
         let sut = RemoteRestaurantLoader(url: url, networkClient: networkClient)
+        
+        trackForMemoryLeaks(networkClient, file: file, line: line)
+        trackForMemoryLeaks(sut, file: file, line: line)
         
         return (sut, networkClient, url)
     }
     
     private func emptyData() -> Data {
         Data("{ \"items\": [] }".utf8)
+    }
+    
+    func trackForMemoryLeaks(_ instance: AnyObject, file: StaticString = #filePath, line: UInt = #line) {
+        addTeardownBlock { [weak instance] in
+            XCTAssertNil(
+                instance,
+                "The instance should've been dealocated, possible memory leak",
+                file: file,
+                line: line
+            )
+        }
     }
     
     func makeItem(
@@ -160,17 +200,4 @@ final class RestaurantDomainTests: XCTestCase {
         return (model, itemJson)
     }
 
-}
-
-final class NetworkClientSpy: NetworkClientProtocol {
-    
-    private(set) var urls: [URL] = []
-    
-    var result: NetworkResult?
-     
-    func request(from url: URL) async -> NetworkResult {
-        self.urls.append(url)
-        return result ?? .failure(NSError(domain: "any error", code: -1))
-    }
-    
 }

@@ -20,15 +20,10 @@ struct RestaurantItem: Decodable, Equatable {
     let parasols: Int
 }
 
-protocol NetworkClientProtocol {
-    typealias NetworkResult = Result<(Data, HTTPURLResponse), Error>
-    func request(from url: URL) async -> NetworkResult
-}
-
 final class RemoteRestaurantLoader {
     
     let url: URL
-    let networkClient: NetworkClientProtocol
+    let networkClient: NetworkClient
     private let okResponse: Int = 200
     
     enum Error: Swift.Error {
@@ -36,7 +31,7 @@ final class RemoteRestaurantLoader {
         case invalidData
     }
     
-    init(url: URL, networkClient: NetworkClientProtocol) {
+    init(url: URL, networkClient: NetworkClient) {
         self.url = url
         self.networkClient = networkClient
     }
